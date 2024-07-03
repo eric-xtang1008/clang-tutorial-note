@@ -3,9 +3,13 @@
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/FrontendAction.h"
 #include "clang/Tooling/Tooling.h"
+#include "clang/Tooling/CommonOptionsParser.h"
+#include "llvm/Support/CommandLine.h"
 
-
+using namespace clang::tooling;
 using namespace clang;
+
+static llvm::cl::OptionCategory ToolCategory("clang tool options");
 
 class FindNamedClassVisitor
   : public RecursiveASTVisitor<FindNamedClassVisitor> {
@@ -47,8 +51,15 @@ public:
   }
 };
 
-int main(int argc, char **argv) {
-  if (argc > 1) {
-    clang::tooling::runToolOnCode(std::make_unique<FindNamedClassAction>(), argv[1]);
+int main(int argc, const char **argv) {
+  auto ExpectedParser = CommonOptionsParser::create(argc, argv, ToolCategory);
+  if (!ExpectedParser) {
+    llvm::errs() << ExpectedParser.takeError();
+    return 1;
   }
+  CommonOptionsParser& OptionsParser = ExpectedParser.get();
+  ClangTool Tool(OptionsParser.getCompilations(),
+                 OptionsParser.getSourcePathList());
+  // run the Clang Tool, creating a new FrontendAction (explained below)
+  return Tool.run(newFrontendActionFactory<FindNamedClassAction>().get());
 }
