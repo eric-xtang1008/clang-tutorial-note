@@ -1,1 +1,5 @@
-namespace n { namespace m { class C {}; } }
+namespace n {
+namespace m {
+class C {};
+} // namespace m
+} // namespace n
